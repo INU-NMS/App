@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="UTF-8">
+		<title>LoRa</title>
+		<style>
+			body {
+				font-family: "Nanum Pen Script", cursive;
+			}
+			button{
+			background: #2e8ce3;
+			padding:1px 13px 1px 13px;
+			font:14px Nanum Pen Script;
+			font-weight:bold;
+			color:#000000;
+			text-align:center;
+			border:solid 1px #73c8f0;
+			background: -moz-linear-gradient(0%, 100%, 90deg, #2e8ce3, #ffffff);
+			background: -webkit-gradient(linear, 0% 0%, 0% 100%, from(#ffffff), to(#2e8ce3));
+			border-radius:5px;
+			-moz-border-radius:5px;
+			-webkit-border-radius:5px;
+			border-bottom-color:#196ebb;
+			text-shadow:0 -1px 0 #196ebb;
+			}
+			.container {
+				display: flex;
+				flex-direction: row;
+				flex-wrap: wrap;	
+				justify-content: center;
+			}
+			.chart-container {
+				width: 500px;
+				margin-left: 40px;
+				margin-right: 40px;
+			}
+			.param-container {
+				display: grid;
+				grid-template-columns: 1fr 1fr 1fr 1fr;
+				width: 900px;
+				margin-left: 130px;
+				margin-right: 130px;
+
+			}
+			.statistics {
+				text-align: right;
+			}
+			label { width: 85px; display: inline-block }
+			.number { width: 100px; }
+			select { width: 170px; }
+			progress { width: 225px; }
+		</style>
+	</head>
+	<body>
+		<div class='container'></div>
+		<div class='param-container'>
+			<div>
+				<div><label>송신 전력 </label><input type="number" id="power" value="14" min="0"/></div>
+				<div><label>전송 속도 </label><input type="number" id="datarate" value="5" min="0"/></div>
+				<div><label>패킷 크기 </label><input type="number" id="length" value="1" min="1"/></div>			
+				<div><label>전송 횟수 </label><input type="number" id="count" value="100" min="0"/></div>
+				<div><select id="euiList"> </select><button id="btnSend">전송</button></div>
+				<div><progress value="0" max="100"></progress></div>
+			</div>
+			<div>
+				<div><label>연결 상태</label><label class="statistics" id="status">false</label></div>
+				<div><label>RSSI 평균</label><label class="statistics" id="st_mean1">0</label></div>
+				<div><label>표준편차</label><label class="statistics" id="st_std1">0</label></div>
+				<div><label>최댓값</label><label class="statistics" id="st_max1">0</label></div>
+				<div><label>최솟값</label><label class="statistics" id="st_min1">0</label></div>
+				<div><label></label><label class="statistics" id="st_recv1">(0/0)</label></div>
+			</div>
+			<div>
+				<div><hr align="left" width="75%" style="border: solid 2px black"></div>
+				<div><label>RSSI 평균</label><label class="statistics" id="st_mean2">0</label></div>
+				<div><label>표준편차</label><label class="statistics" id="st_std2">0</label></div>
+				<div><label>최댓값</label><label class="statistics" id="st_max2">0</label></div>
+				<div><label>최솟값</label><label class="statistics" id="st_min2">0</label></div>
+				<div><hr align="left" width="75%" style="border: solid 2px black"></div>
+			</div>
+			<div>
+				<div><hr align="left" width="75%" style="border: solid 2px black"></div>
+				<div><label>Top1</label><label class="statistics" id="st_top1">0-0</label></div>
+				<div><label>Top2</label><label class="statistics" id="st_top2">0-0</label></div>
+				<div><label>Top3</label><label class="statistics" id="st_top3">0-0</label></div>
+				<div><label>PDR</label><label class="statistics" id="pdr">0%</label></div>
+				<div><hr align="left" width="75%" style="border: solid 2px black"></div>
+			</div>
+		</div>
+	</body>
+	<script> 
+		require('./renderer.js') 
+	</script>
+</html>
