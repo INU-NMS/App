@@ -46,11 +46,6 @@ ipcRenderer.on('status', (event, status) => {
 	label.innerHTML = val;
 })
 
-ipcRenderer.on('gsr', (event, transcript) => {
-	log(transcript);
-	if(transcript == '전송') document.querySelector('#btnSend').click();
-})
-
 ipcRenderer.on('txdone', () => {
 	line.rssi.ns += 1;
 	document.getElementById('st_recv1').innerHTML = `(${line.rssi.nr} / ${line.rssi.ns})`;
@@ -100,8 +95,9 @@ function onClick() {
 	var x = document.getElementById('count').value;
 	if(x <= 0) return 0;
 	if(isSending == false) {
-		logger = fs.createWriteStream(`rssi.csv`, {flags: 'a'});
-		logger.write(`${new Date().getTime()}\t`);
+		var eui = document.querySelector('#euiList').value;
+		logger = fs.createWriteStream(`${eui}.csv`, {flags: 'a'});
+		logger.write(`${ String(new Date()).replace(/ /gi, '/') }\t`);
 		setTimeout(ipcSend, 0, `power=${document.getElementById('power').value}`);
 		setTimeout(ipcSend, 150, `datarate=${document.getElementById('datarate').value}`);
 		setTimeout(ipcSend, 300, `length=${document.getElementById('length').value}`);
@@ -113,14 +109,41 @@ function onClick() {
 		isSending = false;
 		document.getElementById('count').value = 100;
 		document.querySelector('#btnSend').innerHTML = "전송";
+		logger.write('\n');
+		logger.close();
+	}
+}
+
+// 24시간 측정용
+{
+	const button = document.querySelector('#btnSend');
+	button.removeEventListener('click', onClick);
+	button.addEventListener('click', measure24h);
+	var num_measure = 0;
+	var timer;
+
+	function measure24h() {
+		button.disabled = true;
+		timer = setInterval(measure, 1000*60*60);
+		measure();
+	}
+
+	function measure() {
+		num_measure += 1;
+		logger.write(`\n${ String(new Date()).replace(/ /gi, '/') }\t`);
+
+		if(num_measure == 3) {
+			clearInterval(timer);
+			button.disabled = false;
+			logger.write('\n');
+			logger.close();
+			console.log('측정 완료');
+		}
 	}
 }
 
 function onChange() {
 	select = document.querySelector('#euiList');
 	ipcRenderer.send('topic', select.value);
-}
-function log(str) {
-	ipcRenderer.send('debug', str);
 }
 
