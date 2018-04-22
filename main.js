@@ -1,24 +1,25 @@
 const { app, BrowserWindow, ipcMain, Menu } = require('electron');
-const mqtt = require('mqtt').connect('mqtt://nms.iptime.org:8080');
+const mqtt = require('mqtt').connect('mqtt://nms.iptime.org:23');
 const fs = require('fs');
-const recorder = require('./recorder');
-
-//const recognizer = require('./recognizer');
-//const synthesizer = require('./synthesizer');
 
 let window;
 var current_eui;
 
+// mqtt broker에 연결되면 노드와 관련된 모든 토픽을 구독
 mqtt.on('connect', () => {
-    mqtt.subscribe('node/#');
     console.log('mqtt connected and is subscribing node/#');
-    //synthesizer.synthesize('아구아구아구아구아구아구', 'kr');
+    mqtt.subscribe('node/#');
 })
 
+// broker로부터 구독하는 토픽이 도착하면 
 mqtt.on('message', (topic, payload) => {
+    if(topic.includes('req')) return;
     console.log('[App <-- (mqtt) <-- broker]', topic, String(payload));
+
+    // 현재 broker 연결된 노드의 eui 정보 -> GUI의 eui select에 추가
     if(topic === 'node/all/res') window.webContents.send('eui', String(payload));    
-    
+
+    // 특정 노드의 응답 메시지 (전송 완료 / 네트워크 연결 상태) -> 추가 전송 여부 확인 / LoRa 네트워크 조인 상태 확인
     if(topic === `node/${current_eui}/res`) {
         if(String(payload) === 'TX DONE') {
             window.webContents.send('txdone', 'true');
@@ -31,6 +32,7 @@ mqtt.on('message', (topic, payload) => {
         }
     }
 
+    // 게이트웨이의 패킷 수신 메시지 -> 렌더러에서 캔버스에 rssi 값 plot
     if(topic === `lora/${current_eui}/up`) {
         p = JSON.parse(payload);
         rssi = p.rssi;
@@ -49,7 +51,7 @@ app.on('activate', () => {if(window == null) create(); });
 app.on('window-all-closed', () => {if(process.platform !== 'darwin') app.quit();})
 
 function create() {
-    window = new BrowserWindow({ width: 1500, height: 480, resizable: true });
+    window = new BrowserWindow({ width: 1366, height: 480, resizable: true });
     window.loadURL(`file://${__dirname}/index.html`);
 }
 
@@ -68,7 +70,6 @@ ipcMain.on('join', () => {
 ipcMain.on('done', (event, rssi) => {
     var mean = rssi.mean.toFixed(2);
     var std = rssi.std.toFixed(2);
-    //synthesizer.synthesize(`전송 완료 평균 ${mean} 표준편차 ${std}`, 'kr');
 })
 
 ipcMain.on('reset', () => {
@@ -93,32 +94,3 @@ ipcMain.on('eui', () => {
     mqtt.publish('node/all/req', 'eui');
     console.log('[App --> (mqtt) --> broker]', 'node/all/req', 'eui');
 })
-
-ipcMain.on('debug', (event, log) => {
-    console.log('[DEBUG]', log);
-})
-
-//record();
-
-function record() {
-    recorder.record().then(function(result){
-        console.log(result);
-        if(result == 'stop') {
-            recognizer.recognize().then(function(transcription) {
-                process(transcription);
-            }).then(record);
-        }
-    });
-}
-
-function process(transcription) {
-    synthesizer.synthesize(transcription, 'kr');
-    if(transcription.includes("전송")) {
-        synthesizer.synthesize('전송합니다.', 'kr');
-        window.webContents.send('gsr', '전송');
-    }
-    if(transcription.includes("다시") || transcription.includes("재시작")) {
-        synthesizer.synthesize('리셋합니다.', 'kr');
-        app.relaunch();
-    }
-}
