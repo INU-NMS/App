@@ -1,38 +1,37 @@
+// load modules
 const { remote, ipcRenderer } = require('electron');
 const fs = require('fs');
 const Menu = require('./renderer/menu').createMenu(remote, ipcRenderer);
 const plot = require('./renderer/plot');
 
-document.querySelector('#btnSend').addEventListener('click', onClick);
-document.querySelector('#euiList').addEventListener('change', onChange);
+// load html components and add event listeners
+const button = document.querySelector('#btnSend');
+button.addEventListener('click', onClick);
+const select = document.querySelector('#euiList');
+select.addEventListener('change', onChange);
 
-line = null;
-hist = null;
+// global variables
 var isSending = false;
 var logger;
 
-init();
+// initiate rendering
+var line = plot.create('line');
+div = document.createElement('div');
+div.classList.add('chart-container');
+div.appendChild(line.canvas);
+document.querySelector('.container').appendChild(div);
 
-function init() {
-	line = plot.create('line');
-	div = document.createElement('div');
-	div.classList.add('chart-container');
-	div.appendChild(line.canvas);
-	document.querySelector('.container').appendChild(div);
+var hist = plot.create('hist');
+canvas = document.createElement('canvas');
+div = document.createElement('div');
+div.classList.add('chart-container');
+div.appendChild(hist.canvas);
+document.querySelector('.container').appendChild(div);
 
-	hist = plot.create('hist');
-	canvas = document.createElement('canvas');
-	div = document.createElement('div');
-	div.classList.add('chart-container');
-	div.appendChild(hist.canvas);
-	document.querySelector('.container').appendChild(div);
-	
-	ipcRenderer.send('eui', 'request');
-}
+ipcRenderer.send('eui', 'request');
 
 // ipc handler
 ipcRenderer.on('eui', (event, eui) => {
-	select = document.querySelector('#euiList');
 	item = document.createElement('option');
 	item.setAttribute('value', eui);
 	item.appendChild(document.createTextNode(eui));
@@ -42,8 +41,7 @@ ipcRenderer.on('eui', (event, eui) => {
 
 ipcRenderer.on('status', (event, status) => {
 	label = document.getElementById('status');
-	val = (status == 'true') ? "연결됨" : "연결안됨";
-	label.innerHTML = val;
+	label.innerHTML = (status == 'true') ? "연결됨" : "연결안됨";
 })
 
 ipcRenderer.on('txdone', () => {
@@ -61,7 +59,7 @@ ipcRenderer.on('txdone', () => {
 	}
 	isSending = false;
 	document.getElementById('count').val = 100;
-	document.querySelector('#btnSend').innerHTML = "전송";
+	button.innerHTML = "전송";
 	logger.write('\n');
 	logger.close();
 	ipcRenderer.send('done', hist.rssi);
@@ -95,7 +93,7 @@ function onClick() {
 	var x = document.getElementById('count').value;
 	if(x <= 0) return 0;
 	if(isSending == false) {
-		var eui = document.querySelector('#euiList').value;
+		var eui = select.value;
 		logger = fs.createWriteStream(`${eui}.csv`, {flags: 'a'});
 		logger.write(`${ String(new Date()).replace(/ /gi, '/') }\t`);
 		setTimeout(ipcSend, 0, `power=${document.getElementById('power').value}`);
@@ -104,19 +102,22 @@ function onClick() {
 		setTimeout(ipcSend, 450, 'send');	
 		isSending = true;
 		document.getElementById('count');
-		document.querySelector('#btnSend').innerHTML = "정지";
+		button.innerHTML = "정지";
 	} else {
 		isSending = false;
 		document.getElementById('count').value = 100;
-		document.querySelector('#btnSend').innerHTML = "전송";
+		button.innerHTML = "전송";
 		logger.write('\n');
 		logger.close();
 	}
 }
 
+function onChange() {
+	ipcRenderer.send('topic', select.value);
+}
+
 // 24시간 측정용
 {
-	const button = document.querySelector('#btnSend');
 	button.removeEventListener('click', onClick);
 	button.addEventListener('click', measure24h);
 	var num_measure = 0;
@@ -132,7 +133,7 @@ function onClick() {
 		num_measure += 1;
 		logger.write(`\n${ String(new Date()).replace(/ /gi, '/') }\t`);
 
-		if(num_measure == 3) {
+		if(num_measure == 24) {
 			clearInterval(timer);
 			button.disabled = false;
 			logger.write('\n');
@@ -141,9 +142,3 @@ function onClick() {
 		}
 	}
 }
-
-function onChange() {
-	select = document.querySelector('#euiList');
-	ipcRenderer.send('topic', select.value);
-}
-

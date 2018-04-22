@@ -51,7 +51,7 @@ app.on('activate', () => {if(window == null) create(); });
 app.on('window-all-closed', () => {if(process.platform !== 'darwin') app.quit();})
 
 function create() {
-    window = new BrowserWindow({ width: 1366, height: 480, resizable: true });
+    window = new BrowserWindow({ width: 1200, height: 480, resizable: true });
     window.loadURL(`file://${__dirname}/index.html`);
 }
 
