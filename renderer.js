@@ -41,7 +41,12 @@ ipcRenderer.on('eui', (event, eui) => {
 
 ipcRenderer.on('status', (event, status) => {
 	label = document.getElementById('status');
+<<<<<<< HEAD
 	label.innerHTML = (status == 'true') ? "연결됨" : "연결안됨";
+=======
+	val = (status == 'true') ? "연결됨" : "연결안됨";
+	label.innerHTML = val;
+>>>>>>> c5cebb33ff2d1b94f5fe7deb1d52f9c2210a9942
 })
 
 ipcRenderer.on('txdone', () => {
@@ -93,7 +98,11 @@ function onClick() {
 	var x = document.getElementById('count').value;
 	if(x <= 0) return 0;
 	if(isSending == false) {
+<<<<<<< HEAD
 		var eui = select.value;
+=======
+		var eui = document.querySelector('#euiList').value;
+>>>>>>> c5cebb33ff2d1b94f5fe7deb1d52f9c2210a9942
 		logger = fs.createWriteStream(`${eui}.csv`, {flags: 'a'});
 		logger.write(`${ String(new Date()).replace(/ /gi, '/') }\t`);
 		setTimeout(ipcSend, 0, `power=${document.getElementById('power').value}`);
@@ -106,9 +115,43 @@ function onClick() {
 	} else {
 		isSending = false;
 		document.getElementById('count').value = 100;
+<<<<<<< HEAD
 		button.innerHTML = "전송";
 		logger.write('\n');
 		logger.close();
+=======
+		document.querySelector('#btnSend').innerHTML = "전송";
+		logger.write('\n');
+		logger.close();
+	}
+}
+
+// 24시간 측정용
+{
+	const button = document.querySelector('#btnSend');
+	button.removeEventListener('click', onClick);
+	button.addEventListener('click', measure24h);
+	var num_measure = 0;
+	var timer;
+
+	function measure24h() {
+		button.disabled = true;
+		timer = setInterval(measure, 1000*60*60);
+		measure();
+	}
+
+	function measure() {
+		num_measure += 1;
+		logger.write(`\n${ String(new Date()).replace(/ /gi, '/') }\t`);
+
+		if(num_measure == 3) {
+			clearInterval(timer);
+			button.disabled = false;
+			logger.write('\n');
+			logger.close();
+			console.log('측정 완료');
+		}
+>>>>>>> c5cebb33ff2d1b94f5fe7deb1d52f9c2210a9942
 	}
 }
 
