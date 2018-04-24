@@ -6,6 +6,7 @@ const plot = require('./renderer/plot');
 
 // load html components and add event listeners
 const button = document.querySelector('#btnSend');
+
 button.addEventListener('click', onClick);
 const select = document.querySelector('#euiList');
 select.addEventListener('change', onChange);
@@ -43,6 +44,7 @@ ipcRenderer.on('eui', (event, eui) => {
 ipcRenderer.on('status', (event, status) => {
 	label = document.getElementById('status');
 	label.innerHTML = (status == 'true') ? "연결됨" : "연결안됨";
+
 })
 
 ipcRenderer.on('txdone', () => {
@@ -121,13 +123,15 @@ function onChange() {
 // 24시간 측정용
 if(test){
 	button.removeEventListener('click', onClick);
-	button.addEventListener('click', measure24h);
+	button.addEventListener('click', timeout);
 	var num_measure = 0;
 	var timer;
 
-	function y() {
-		// var x = 60 - new Date().getMinute
-		// setTimeout(measure24h, 1000*60*x);
+	function timeout() {
+		 var x = 60 - new Date().getMinutes();
+		 console.log(`남은시간%d`, x);
+		 if(x>=55) measure24h();
+		 else setTimeout(measure24h, x*1000*60);
 	}
 
 	function measure24h() {
@@ -136,8 +140,6 @@ if(test){
 		
 		onClick();
 		measure();
-		
-		
 	}
 
 	function measure() {
