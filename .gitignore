@@ -60,5 +60,5 @@ typings/
 package.json
 package-lock.json
 
-*.csv
 .vscode/tasks.json
+*.csv

@@ -91,6 +91,7 @@ function ipcSend(str) {
 
 // html components event handler
 function onClick() {
+	console.log('hello');
 	var x = document.getElementById('count').value;
 	if(x <= 0) return 0;
 	if(isSending == false) {
@@ -124,13 +125,23 @@ if(test){
 	var num_measure = 0;
 	var timer;
 
+	function y() {
+		// var x = 60 - new Date().getMinute
+		// setTimeout(measure24h, 1000*60*x);
+	}
+
 	function measure24h() {
 		button.disabled = true;
 		timer = setInterval(measure, 1000*60*60);
+		
+		onClick();
 		measure();
+		
+		
 	}
 
 	function measure() {
+		document.getElementById('count').value=100000;
 		num_measure += 1;
 		logger.write(`\n${ String(new Date()).replace(/ /gi, '/') }\t`);
 
@@ -139,6 +150,7 @@ if(test){
 			button.disabled = false;
 			logger.write('\n');
 			logger.close();
+			document.getElementById('count').value=0
 			console.log('측정 완료');
 		}
 	}
