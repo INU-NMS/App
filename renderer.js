@@ -143,7 +143,7 @@ if(test){
 	}
 
 	function measure() {
-		document.getElementById('count').value=100000;
+		document.getElementById('count').value=1000000;
 		num_measure += 1;
 		logger.write(`\n${ String(new Date()).replace(/ /gi, '/') }\t`);
 
