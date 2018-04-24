@@ -13,6 +13,7 @@ select.addEventListener('change', onChange);
 // global variables
 var isSending = false;
 var logger;
+var test = true;
 
 // initiate rendering
 var line = plot.create('line');
@@ -117,7 +118,7 @@ function onChange() {
 }
 
 // 24시간 측정용
-{
+if(test){
 	button.removeEventListener('click', onClick);
 	button.addEventListener('click', measure24h);
 	var num_measure = 0;
