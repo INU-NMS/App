@@ -108,15 +108,17 @@ function geo_calc(data, labels) {
     var tmp = 0;
     const N = data.length;
     const den = data.reduce((a, b)=> { return a+b });
+    console.log(den);
 
     // 평균 값
     for(i=0; i<N; i++) result.mean += (labels[i] * data[i])/den;
 
     // 표준 편차
-    if(N == 1) result.std = 0;
-    else if(N > 1) for(i=0; i<N; i++) result.std += (labels[i] ** 2) * data[i] / den;
-    result.std = (result.std - (result.mean ** 2)) * den / (den-1);
-    result.std = Math.sqrt(result.std);
+    if(den > 1) {
+        for(i=0; i<N; i++) result.std += (labels[i] ** 2) * data[i] / den;
+        result.std = (result.std - (result.mean ** 2)) * den / (den-1);
+        result.std = Math.sqrt(result.std);
+    }
 
     // 최댓값, 최솟값
     for(i=127; i>0; i--) if(data[i] > 0) {

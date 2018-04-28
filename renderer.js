@@ -5,13 +5,14 @@ const Menu = require('./renderer/menu').createMenu(remote, ipcRenderer);
 const plot = require('./renderer/plot');
 
 // load html components and add event listeners
-const button = document.querySelector('#btnSend');
-button.addEventListener('click', onClick);
-const select = document.querySelector('#euiList');
-select.addEventListener('change', onChange);
+const button = document.getElementById('btnSend');
+button.addEventListener('click', send);
+const select = document.getElementById('euiList');
+select.addEventListener('change', addEUI);
 const logArea = document.getElementById('logArea');
 
 // global variables
+var isConnected = false;
 var isSending = false;
 var logger;
 var test = false;
@@ -24,36 +25,39 @@ div.appendChild(line.canvas);
 document.querySelector('.container').appendChild(div);
 
 var hist = plot.create('hist');
-canvas = document.createElement('canvas');
 div = document.createElement('div');
 div.classList.add('chart-container');
 div.appendChild(hist.canvas);
 document.querySelector('.container').appendChild(div);
 
-ipcRenderer.send('eui', 'request');
+ipcRenderer.send('req', 'eui');
 
-// ipc handler
-ipcRenderer.on('eui', (event, eui) => {
+ipcRenderer.on('res', (event, topic, payload) => {
+	console.log('res', topic, payload);
+	if(topic === 'eui') addEUI(payload);
+	if(topic === 'status') setStatus(payload);
+	if(topic === 'rssi') setRSSI(payload);
+	if(topic === 'txdone') txDone();
+});
+
+function addEUI(eui) {
 	item = document.createElement('option');
 	item.setAttribute('value', eui);
 	item.appendChild(document.createTextNode(eui));
 	select.appendChild(item);
-	onChange();
-})
+	setEUI();
+}
 
-ipcRenderer.on('status', (event, status) => {
-	label = document.getElementById('status');
-	label.innerHTML = (status == 'true') ? "연결됨" : "연결안됨";
+function setStatus(status) {
+	document.getElementById('status').innerHTML = status;
+	if(status === 'ON') isConnected = true;
+	else isConnected = false;
+}
 
-})
-
-ipcRenderer.on('txdone', () => {
+function txDone() {
 	line.rssi.ns += 1;
 	document.getElementById('st_recv1').innerHTML = `(${line.rssi.nr} / ${line.rssi.ns})`;
-	if(isSending == false) {
-		document.getElementById('count').val = 100;
-		return;	
-	}
+
 	count = document.getElementById('count');
 	count.value = count.value - 1;
 	if(count.value > 0) {
@@ -61,18 +65,18 @@ ipcRenderer.on('txdone', () => {
 		return;
 	}
 	isSending = false;
-	document.getElementById('count').val = 100;
+	count.value = 100;
 	button.innerHTML = "전송";
+
+	log('stop sending');
 	logger.write('\n');
 	logger.close();
-	ipcRenderer.send('done', hist.rssi);
-})
+}
 
-ipcRenderer.on('rssi', (event, rssi) => {
-	document.getElementById('pdr').innerHTML = (line.rssi.nr/line.rssi.ns).toFixed(2);
-	
+function setRSSI(rssi) {
 	logger.write(`${rssi}\t`);
-
+	
+	document.getElementById('pdr').innerHTML = (line.rssi.nr/line.rssi.ns).toFixed(2);
 	line.add('', rssi);
 	hist.add('', rssi);
 
@@ -80,54 +84,64 @@ ipcRenderer.on('rssi', (event, rssi) => {
 	document.getElementById('st_std1').innerHTML = line.rssi.std.toFixed(2);
 	document.getElementById('st_max1').innerHTML = line.rssi.max.toFixed(2);
 	document.getElementById('st_min1').innerHTML = line.rssi.min.toFixed(2);
-
 	document.getElementById('st_mean2').innerHTML = hist.rssi.mean.toFixed(2);
 	document.getElementById('st_std2').innerHTML = hist.rssi.std.toFixed(2);
 	document.getElementById('st_max2').innerHTML = hist.rssi.max.toFixed(2);
 	document.getElementById('st_min2').innerHTML = hist.rssi.min.toFixed(2);	
-})
+}
 
 ipcRenderer.on('log', (event, str)=> {
-	logArea.innerHTML += `${str}\n`;
-	logArea.scrollTop = logArea.scrollHeight;
+	log(str);
 });
 
+function log(str) {
+	logArea.innerHTML += `${str}\n`;
+	logArea.scrollTop = logArea.scrollHeight;
+}
+
 function ipcSend(str) {
-	ipcRenderer.send('message', str); 
+	ipcRenderer.send('message', str);
 }
 
 // html components event handler
-function onClick() {
-	console.log('hello');
-	var x = document.getElementById('count').value;
-	if(x <= 0) return 0;
+function send() {
+	if(isConnected == false) {
+		log('cannot transmit LoRa frame');
+		return;
+	}
+
+	var x = document.getElementById('count');
+	if(x.value <= 0) return;
 	if(isSending == false) {
+		isSending = true;
 		var eui = select.value;
+		var header = String(new Date()).replace(/ /gi, '/');
 		logger = fs.createWriteStream(`${eui}.csv`, {flags: 'a'});
-		logger.write(`${ String(new Date()).replace(/ /gi, '/') }\t`);
+		logger.write(`${header}\t`);
+		log(`start logging since ${header}`);
+
 		setTimeout(ipcSend, 0, `power=${document.getElementById('power').value}`);
 		setTimeout(ipcSend, 150, `datarate=${document.getElementById('datarate').value}`);
 		setTimeout(ipcSend, 300, `length=${document.getElementById('length').value}`);
-		setTimeout(ipcSend, 450, 'send');	
-		isSending = true;
-		document.getElementById('count');
+		setTimeout(ipcSend, 450, 'send');			
 		button.innerHTML = "정지";
 	} else {
 		isSending = false;
-		document.getElementById('count').value = 100;
+		log('stop logging');
+		x.value = 100;
 		button.innerHTML = "전송";
 		logger.write('\n');
 		logger.close();
 	}
 }
 
-function onChange() {
+function setEUI() {
 	ipcRenderer.send('topic', select.value);
 }
 
 // 24시간 측정용
 if(test){
-	button.removeEventListener('click', onClick);
+	button.removeEventListener('click', send);
 	button.addEventListener('click', timeout);
 	var num_measure = 0;
 	var timer;
@@ -143,7 +157,7 @@ if(test){
 		button.disabled = true;
 		timer = setInterval(measure, 1000*60*60);
 		
-		onClick();
+		send();
 		measure();
 	}
 

@@ -16,18 +16,17 @@ mqtt.on('message', (topic, payload) => {
     log(`[App <-- (mqtt) <-- broker] ${topic} ${String(payload)}`);
 
     // 현재 broker 연결된 노드의 eui 정보 -> GUI의 eui select에 추가
-    if(topic === 'node/all/res') window.webContents.send('eui', String(payload));    
-
+    if(topic === 'node/all/res') window.webContents.send('res', 'eui', String(payload));    
     // 특정 노드의 응답 메시지 (전송 완료 / 네트워크 연결 상태) -> 추가 전송 여부 확인 / LoRa 네트워크 조인 상태 확인
     if(topic === `node/${current_eui}/res`) {
         if(String(payload) === 'TX DONE') {
-            window.webContents.send('txdone', 'true');
-            log('[App --> (ipc) --> Renderer]', 'txdone', 'true');
+            window.webContents.send('res', 'txdone', 'true');       // RSSI from the node or NOACK
+            log('[App --> (ipc) --> Renderer] txdone true');
         }
         if(String(payload).includes('status')) {
-            var val = String(payload).includes('true') ? 'true' : 'false';
-            window.webContents.send('status', val);
-            log(`[App --> (ipc) --> Renderer] status ${val}`);
+            var status = String(payload).includes('true') ? 'ON' : 'OFF';
+            window.webContents.send('res', 'status', status);
+            log(`[App --> (ipc) --> Renderer] status ${status}`);
         }
     }
 
@@ -36,7 +35,7 @@ mqtt.on('message', (topic, payload) => {
         p = JSON.parse(payload);
         rssi = p.rssi;
         lsnr = p.lsnr;
-        window.webContents.send('rssi', rssi);
+        window.webContents.send('res', 'rssi', rssi);
         log(`[App --> (ipc) --> Renderer] rssi ${rssi} lsnr ${lsnr}`);
     }
 })
@@ -54,6 +53,13 @@ function create() {
     window.loadURL(`file://${__dirname}/index.html`);
 }
 
+ipcMain.on('req', (event, payload) => {
+    if(payload === 'eui') {
+        mqtt.publish('node/all/req', 'eui');
+        log('[App --> (mqtt) --> broker] node/all/req eui');
+    }
+})
+
 ipcMain.on('message', (event, payload) => {
     topic = `node/${current_eui}/req`;
     mqtt.publish(topic, payload);
@@ -68,11 +74,6 @@ ipcMain.on('join', () => {
     topic = `node/${current_eui}/req`;
     mqtt.publish(topic, 'join');
     log(`[App --> (mqtt) --> broker] ${topic} join`);
-})
-
-ipcMain.on('done', (event, rssi) => {
-    var mean = rssi.mean.toFixed(2);
-    var std = rssi.std.toFixed(2);
 })
 
 ipcMain.on('reset', () => {
@@ -95,12 +96,6 @@ ipcMain.on('topic', (event, topic) => {
     mqtt.subscribe(`lora/${current_eui}/up`);    
     log(`subscribing lora/${current_eui}/up`);  
 });
-
-ipcMain.on('eui', () => {
-    // request eui
-    mqtt.publish('node/all/req', 'eui');
-    log('[App --> (mqtt) --> broker] node/all/req eui');
-})
 
 function log(str) {
     console.log(str);
