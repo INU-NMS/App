@@ -7,14 +7,14 @@ var current_eui;
 
 // mqtt broker에 연결되면 노드와 관련된 모든 토픽을 구독
 mqtt.on('connect', () => {
-    console.log('mqtt connected and is subscribing node/#');
+    log('mqtt connected and is subscribing node/#');
     mqtt.subscribe('node/#');
 })
 
 // broker로부터 구독하는 토픽이 도착하면 
 mqtt.on('message', (topic, payload) => {
     if(topic.includes('req')) return;
-    console.log('[App <-- (mqtt) <-- broker]', topic, String(payload));
+    log('[App <-- (mqtt) <-- broker]', topic, String(payload));
 
     // 현재 broker 연결된 노드의 eui 정보 -> GUI의 eui select에 추가
     if(topic === 'node/all/res') window.webContents.send('eui', String(payload));    
@@ -23,12 +23,12 @@ mqtt.on('message', (topic, payload) => {
     if(topic === `node/${current_eui}/res`) {
         if(String(payload) === 'TX DONE') {
             window.webContents.send('txdone', 'true');
-            console.log('[App --> (ipc) --> Renderer]', 'txdone', 'true');
+            log('[App --> (ipc) --> Renderer]', 'txdone', 'true');
         }
         if(String(payload).includes('status')) {
             var val = String(payload).includes('true') ? 'true' : 'false';
             window.webContents.send('status', val);
-            console.log('[App --> (ipc) --> Renderer]', 'status', val);
+            log('[App --> (ipc) --> Renderer]', 'status', val);
         }
     }
 
@@ -38,7 +38,7 @@ mqtt.on('message', (topic, payload) => {
         rssi = p.rssi;
         lsnr = p.lsnr;
         window.webContents.send('rssi', rssi);
-        console.log('[App --> (ipc) --> Renderer]', 'rssi', rssi, 'lsnr', lsnr);
+        log('[App --> (ipc) --> Renderer]', 'rssi', rssi, 'lsnr', lsnr);
     }
 })
 
@@ -51,20 +51,20 @@ app.on('activate', () => {if(window == null) create(); });
 app.on('window-all-closed', () => {if(process.platform !== 'darwin') app.quit();})
 
 function create() {
-    window = new BrowserWindow({ width: 1400, height: 480, resizable: true });
+    window = new BrowserWindow({ width: 1200, height: 440, resizable: true });
     window.loadURL(`file://${__dirname}/index.html`);
 }
 
 ipcMain.on('message', (event, payload) => {
     topic = `node/${current_eui}/req`;
     mqtt.publish(topic, payload);
-    console.log('[App --> (mqtt) --> broker]', topic, payload);
+    log('[App --> (mqtt) --> broker]', topic, payload);
 }); 
 
 ipcMain.on('join', () => {
     topic = `node/${current_eui}/req`;
     mqtt.publish(topic, 'join');
-    console.log('[App --> (mqtt) --> broker]', topic, 'join');  
+    log('[App --> (mqtt) --> broker]', topic, 'join');  
 })
 
 ipcMain.on('done', (event, rssi) => {
@@ -75,7 +75,7 @@ ipcMain.on('done', (event, rssi) => {
 ipcMain.on('reset', () => {
     topic = `node/${current_eui}/req`;
     mqtt.publish(topic, 'reset');
-    console.log('[App --> (mqtt) --> broker]', topic, 'reset');  
+    log('[App --> (mqtt) --> broker]', topic, 'reset');  
 })
 
 // eui select를 이용해 mqtt topic 변경
@@ -83,14 +83,19 @@ ipcMain.on('topic', (event, topic) => {
     current_eui = topic;
     topic = `node/${topic}/req`;
     mqtt.publish(topic, 'status');
-    console.log('[App --> (mqtt) --> broker]', topic, 'status');  
+    log('[App --> (mqtt) --> broker]', topic, 'status');  
     
     mqtt.subscribe(`lora/${current_eui}/up`);    
-    console.log('subscribing', `lora/${current_eui}/up`);  
+    log('subscribing', `lora/${current_eui}/up`);  
 });
 
 ipcMain.on('eui', () => {
     // request eui
     mqtt.publish('node/all/req', 'eui');
-    console.log('[App --> (mqtt) --> broker]', 'node/all/req', 'eui');
+    log('[App --> (mqtt) --> broker]', 'node/all/req', 'eui');
 })
+
+function log(str) {
+    console.log(str);
+    window.webContents.send('log', str);
+}

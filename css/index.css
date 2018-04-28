@@ -1,0 +1,28 @@
+body { font-family: "Nanum Pen Script", cursive; }
+button { font: 14px Nanum Pen Script; width: 54px; }
+label { width: 80px; display: inline-block }
+input[type=number] { width: 80; text-align: right; }
+select { width: 150px; margin-right: 7px; }
+progress { font: 14px Nanum Pen Script; width: 212px; }
+textarea { font: 12px Nanum Pen Script; width: 320px; }
+
+.container {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;	
+    justify-content: center;
+}
+.chart-container {
+    width: 580px;
+    margin-left: 5px;
+    margin-right: 5px;
+}
+.param-container {
+    display: flex;
+    justify-content: center;
+    margin-left: 15px;
+    margin-right: 15px;
+}
+.statistics {
+    text-align: right;
+}

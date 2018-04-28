@@ -6,15 +6,15 @@ const plot = require('./renderer/plot');
 
 // load html components and add event listeners
 const button = document.querySelector('#btnSend');
-
 button.addEventListener('click', onClick);
 const select = document.querySelector('#euiList');
 select.addEventListener('change', onChange);
+const logArea = document.getElementById('logArea');
 
 // global variables
 var isSending = false;
 var logger;
-var test = true;
+var test = false;
 
 // initiate rendering
 var line = plot.create('line');
@@ -86,6 +86,11 @@ ipcRenderer.on('rssi', (event, rssi) => {
 	document.getElementById('st_max2').innerHTML = hist.rssi.max.toFixed(2);
 	document.getElementById('st_min2').innerHTML = hist.rssi.min.toFixed(2);	
 })
+
+ipcRenderer.on('log', (event, str)=> {
+	logArea.innerHTML += `${str}\n`;
+	logArea.scrollTop = logArea.scrollHeight;
+});
 
 function ipcSend(str) {
 	ipcRenderer.send('message', str); 
