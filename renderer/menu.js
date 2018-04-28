@@ -45,11 +45,11 @@ exports.createMenu = function(remote, ipcRenderer) {
           }, {
         label: "Join",
         click () { ipcRenderer.send('join'); },
-        accelerator: 'Command+J'
+        accelerator: 'CmdOrCtrl+J'
       }, {
         label: "Reboot",
         click () { ipcRenderer.send('reset'); },
-        accelerator: 'Command+F'
+        accelerator: 'CmdOrCtrl+F'
       } 
         ]
       }
