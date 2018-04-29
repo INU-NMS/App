@@ -30,7 +30,7 @@ div.classList.add('chart-container');
 div.appendChild(hist.canvas);
 document.querySelector('.container').appendChild(div);
 
-ipcRenderer.send('req', 'eui');
+ipcSend('eui');
 
 ipcRenderer.on('res', (event, topic, payload) => {
 	console.log('res', topic, payload);
@@ -61,7 +61,7 @@ function txDone() {
 	count = document.getElementById('count');
 	count.value = count.value - 1;
 	if(count.value > 0) {
-		ipcRenderer.send('message', 'send');
+		ipcSend('node', 'send');
 		return;
 	}
 	isSending = false;
@@ -99,19 +99,19 @@ function log(str) {
 	logArea.scrollTop = logArea.scrollHeight;
 }
 
-function ipcSend(str) {
-	ipcRenderer.send('message', str);
+function ipcSend(topic, payload) {
+	ipcRenderer.send('req', topic, payload);
 }
 
 // html components event handler
 function send() {
-	if(isConnected == false) {
+	var x = document.getElementById('count');
+	var isAvailable = (isConnected && x.value > 0);
+	if(isAvailable == false) {
 		log('cannot transmit LoRa frame');
 		return;
 	}
 
-	var x = document.getElementById('count');
-	if(x.value <= 0) return;
 	if(isSending == false) {
 		isSending = true;
 		var eui = select.value;
@@ -120,10 +120,10 @@ function send() {
 		logger.write(`${header}\t`);
 		log(`start logging since ${header}`);
 
-		setTimeout(ipcSend, 0, `power=${document.getElementById('power').value}`);
-		setTimeout(ipcSend, 150, `datarate=${document.getElementById('datarate').value}`);
-		setTimeout(ipcSend, 300, `length=${document.getElementById('length').value}`);
-		setTimeout(ipcSend, 450, 'send');			
+		setTimeout(ipcSend, 0, 'node', `power=${document.getElementById('power').value}`);
+		setTimeout(ipcSend, 150, 'node', `datarate=${document.getElementById('datarate').value}`);
+		setTimeout(ipcSend, 300, 'node', `length=${document.getElementById('length').value}`);
+		setTimeout(ipcSend, 450, 'node', 'send');			
 		button.innerHTML = "정지";
 	} else {
 		isSending = false;
@@ -136,7 +136,7 @@ function send() {
 }
 
 function setEUI() {
-	ipcRenderer.send('topic', select.value);
+	ipcSend('topic', select.value);
 }
 
 // 24시간 측정용

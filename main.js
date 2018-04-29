@@ -21,7 +21,7 @@ mqtt.on('message', (topic, payload) => {
     if(topic === `node/${current_eui}/res`) {
         if(String(payload) === 'TX DONE') {
             window.webContents.send('res', 'txdone', 'true');       // RSSI from the node or NOACK
-            log('[App --> (ipc) --> Renderer] txdone true');
+            log('[App --> (ipc) --> Renderer] txdone');
         }
         if(String(payload).includes('status')) {
             var status = String(payload).includes('true') ? 'ON' : 'OFF';
@@ -53,49 +53,31 @@ function create() {
     window.loadURL(`file://${__dirname}/index.html`);
 }
 
-ipcMain.on('req', (event, payload) => {
-    if(payload === 'eui') {
+ipcMain.on('req', (event, topic, payload) => {
+    if(topic === 'eui') {
         mqtt.publish('node/all/req', 'eui');
         log('[App --> (mqtt) --> broker] node/all/req eui');
+        return;
     }
-})
+    if(topic === 'topic') {
+        current_eui = payload;
+        mqttTopic = `node/${current_eui}/req`;
+        mqtt.publish(mqttTopic, 'status');
+        log(`[App --> (mqtt) --> broker] ${mqttTopic} status`);  
+        
+        mqtt.subscribe(`lora/${current_eui}/up`);    
+        log(`subscribing lora/${current_eui}/up`);  
+        return;
+    }
 
-ipcMain.on('message', (event, payload) => {
-    topic = `node/${current_eui}/req`;
-    mqtt.publish(topic, payload);
-    log(`[App --> (mqtt) --> broker] ${topic} ${payload}`);
-}); 
-
-ipcMain.on('join', () => {
     if(current_eui === undefined) {
         log(`eui undefined, connect a node to the broker`);
-        return;
-    } 
-    topic = `node/${current_eui}/req`;
-    mqtt.publish(topic, 'join');
-    log(`[App --> (mqtt) --> broker] ${topic} join`);
-})
+        return;    
+    }
 
-ipcMain.on('reset', () => {
-    if(current_eui === undefined) {
-        log(`eui undefined, connect a node to the broker`);
-        return;
-    }   
-    topic = `node/${current_eui}/req`;
-    mqtt.publish(topic, 'reset');
-    log(`[App --> (mqtt) --> broker]', ${topic} reset`);  
+    mqtt.publish(`node/${current_eui}/req`, payload);
+    log(`[App --> (mqtt) --> broker] node/${current_eui}/req ${payload}`);    
 })
-
-// eui select를 이용해 mqtt topic 변경
-ipcMain.on('topic', (event, topic) => {
-    current_eui = topic;
-    topic = `node/${topic}/req`;
-    mqtt.publish(topic, 'status');
-    log(`[App --> (mqtt) --> broker] ${topic} status`);  
-    
-    mqtt.subscribe(`lora/${current_eui}/up`);    
-    log(`subscribing lora/${current_eui}/up`);  
-});
 
 function log(str) {
     console.log(str);
