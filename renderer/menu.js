@@ -44,11 +44,11 @@ exports.createMenu = function(remote, ipcRenderer) {
             click () { require('electron').shell.openExternal('https://electronjs.org') }
           }, {
         label: "Join",
-        click () { ipcRenderer.send('req', 'join'); },
+        click () { ipcRenderer.send('req', 'node', 'join'); },
         accelerator: 'CmdOrCtrl+J'
       }, {
         label: "Reboot",
-        click () { ipcRenderer.send('req', 'reset'); },
+        click () { ipcRenderer.send('req', 'node', 'reset'); },
         accelerator: 'CmdOrCtrl+F'
       } 
         ]

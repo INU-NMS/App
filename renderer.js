@@ -60,7 +60,10 @@ function txDone() {
 
 	count = document.getElementById('count');
 	count.value = count.value - 1;
-	if(count.value > 0) {
+
+	log(isSending);
+
+	if(count.value > 0 && isSending === true) {
 		ipcSend('node', 'send');
 		return;
 	}
@@ -68,7 +71,8 @@ function txDone() {
 	count.value = 100;
 	button.innerHTML = "전송";
 
-	log('stop sending');
+	log('done');
+	alert('done');
 	logger.write('\n');
 	logger.close();
 }
@@ -127,11 +131,6 @@ function send() {
 		button.innerHTML = "정지";
 	} else {
 		isSending = false;
-		log('stop logging');
-		x.value = 100;
-		button.innerHTML = "전송";
-		logger.write('\n');
-		logger.close();
 	}
 }
 

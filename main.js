@@ -14,14 +14,17 @@ mqtt.on('connect', () => {
 mqtt.on('message', (topic, payload) => {
     if(topic.includes('req')) return;
     log(`[App <-- (mqtt) <-- broker] ${topic} ${String(payload)}`);
-
+    console.log(topic);
     // 현재 broker 연결된 노드의 eui 정보 -> GUI의 eui select에 추가
-    if(topic === 'node/all/res') window.webContents.send('res', 'eui', String(payload));    
+    if(topic === 'node/all/res') {
+        log('got an eui');
+        window.webContents.send('res', 'eui', String(payload));    
+    }
     // 특정 노드의 응답 메시지 (전송 완료 / 네트워크 연결 상태) -> 추가 전송 여부 확인 / LoRa 네트워크 조인 상태 확인
     if(topic === `node/${current_eui}/res`) {
         if(String(payload) === 'TX DONE') {
-            window.webContents.send('res', 'txdone', 'true');       // RSSI from the node or NOACK
             log('[App --> (ipc) --> Renderer] txdone');
+            window.webContents.send('res', 'txdone', 'true');       // RSSI from the node or NOACK
         }
         if(String(payload).includes('status')) {
             var status = String(payload).includes('true') ? 'ON' : 'OFF';
@@ -46,7 +49,7 @@ app.on('ready', () => {
 });
 
 app.on('activate', () => {if(window == null) create(); });
-app.on('window-all-closed', () => {if(process.platform !== 'darwin') app.quit();})
+app.on('window-all-closed', () => { app.quit(); });
 
 function create() {
     window = new BrowserWindow({ width: 1280, height: 480, resizable: true });
@@ -74,9 +77,10 @@ ipcMain.on('req', (event, topic, payload) => {
         log(`eui undefined, connect a node to the broker`);
         return;    
     }
-
-    mqtt.publish(`node/${current_eui}/req`, payload);
-    log(`[App --> (mqtt) --> broker] node/${current_eui}/req ${payload}`);    
+    if(topic == 'node') {
+        mqtt.publish(`node/${current_eui}/req`, payload);
+        log(`[App --> (mqtt) --> broker] node/${current_eui}/req ${payload}`);    
+    }
 })
 
 function log(str) {
