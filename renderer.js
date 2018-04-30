@@ -37,7 +37,7 @@ ipcRenderer.on('res', (event, topic, payload) => {
 	if(topic === 'eui') addEUI(payload);
 	if(topic === 'status') setStatus(payload);
 	if(topic === 'rssi') setRSSI(payload);
-	if(topic === 'txdone') txDone();
+	if(topic === 'ack') txDone(payload);
 });
 
 function addEUI(eui) {
@@ -54,14 +54,17 @@ function setStatus(status) {
 	else isConnected = false;
 }
 
-function txDone() {
+function txDone(delay) {
 	line.rssi.ns += 1;
 	document.getElementById('st_recv1').innerHTML = `(${line.rssi.nr} / ${line.rssi.ns})`;
 
 	count = document.getElementById('count');
 	count.value = count.value - 1;
 
-	log(isSending);
+	// 지연시간 표시 및 plot
+	line.plotDelay(delay);
+	document.getElementById('delay').innerHTML = `${delay/2}[ms]`;
+	
 
 	if(count.value > 0 && isSending === true) {
 		ipcSend('node', 'send');
@@ -72,7 +75,6 @@ function txDone() {
 	button.innerHTML = "전송";
 
 	log('done');
-	alert('done');
 	logger.write('\n');
 	logger.close();
 }
@@ -81,8 +83,8 @@ function setRSSI(rssi) {
 	logger.write(`${rssi}\t`);
 	
 	document.getElementById('pdr').innerHTML = (line.rssi.nr/line.rssi.ns).toFixed(2);
-	line.add('', rssi);
-	hist.add('', rssi);
+	line.add(rssi);
+	hist.add(rssi);
 
 	document.getElementById('st_mean1').innerHTML = line.rssi.mean.toFixed(2);
 	document.getElementById('st_std1').innerHTML = line.rssi.std.toFixed(2);

@@ -10,18 +10,25 @@ function create_line_chart() {
 		type: 'line', 
 		data: {
 			datasets: [ 
-				{ label: 'Raw data', fill: false, backgroundColor: 'rgb(255, 99, 132)', borderColor: 'rgb(255, 99, 132)' },
-				{ label: 'Avg data', fill: false, backgroundColor: 'rgb(99, 132, 255)', borderColor: 'rgb(99, 132, 255)', borderDash: [5, 5] },
+				{ label: 'Raw data', fill: false, backgroundColor: 'rgb(255, 99, 132)', borderColor: 'rgb(255, 99, 132)'},
+                { label: 'Avg data', fill: false, backgroundColor: 'rgb(99, 132, 255)', borderColor: 'rgb(99, 132, 255)', borderDash: [5, 5] },
+                { label: 'Latency', fill: false, yAxisID: 'y-axis-2' }
 			]
 		},
 		options: {
-			tooltips: { mode: 'index', intersect: false }, hover: { mode: 'index', intersect: false },
+            tooltips: { mode: 'index', intersect: false }, hover: { mode: 'index', intersect: false },
+            scales: {
+                yAxes: [
+                    { type: 'linear', display: true, position: 'left', id: 'y-axis-1' }, 
+                    { type: 'linear', display: true, position: 'right', id: 'y-axis-2' }
+                ]
+            }
         },
     }
     canvas = document.createElement('canvas');
     var chart = new Chart(canvas.getContext('2d'), config);
     chart.rssi = { mean: 0, std: 0, max: 0, min: 0, ns: 0, nr: 0 }
-    chart.add = (label, value) => {
+    chart.add = (value) => {
         labels = chart.data.labels;
         datasets = chart.data.datasets;
 
@@ -31,7 +38,7 @@ function create_line_chart() {
             datasets[0].data.shift();
             datasets[1].data.shift();
         }
-        labels.push(label); 
+        labels.push(chart.rssi.nr); 
         datasets[0].data.push(value);
         
         // 통계 값 계산
@@ -41,7 +48,17 @@ function create_line_chart() {
         chart.rssi.max = stat.max;
         chart.rssi.min = stat.min;
         datasets[1].data.push(stat.mean);
-
+        chart.update();
+    };
+    
+    chart.plotDelay = (value) => {
+        console.log(value);
+        data = chart.data.datasets[2].data;
+        if(data.length > 30) {
+           data.shift();
+        }
+        data.push(value);
+        chart.delay = ari_calc(data).mean;
         chart.update();
     };
     return chart;
@@ -68,7 +85,7 @@ function create_hist_chart() {
     canvas = document.createElement('canvas');
     var chart = new Chart(canvas.getContext('2d'), config);
     chart.rssi = { mean: 0, std: 0, max: 0, min: 0, ns: 0, nr: 0 }
-    chart.add = (label, value) => {
+    chart.add = (value) => {
         var index = chart.data.labels.indexOf(value);
         chart.data.datasets[0].data[index] += 1;
 

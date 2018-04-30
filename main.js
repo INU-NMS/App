@@ -26,6 +26,12 @@ mqtt.on('message', (topic, payload) => {
             log('[App --> (ipc) --> Renderer] txdone');
             window.webContents.send('res', 'txdone', 'true');       // RSSI from the node or NOACK
         }
+        if(String(payload).includes("ack")) {
+            delay = String(payload).replace('ack=', '');
+            log(`[App --> (ipc) --> Renderer] ack ${delay}`);
+            window.webContents.send('res', 'ack', delay);       // RSSI from the node or NOACK
+        }
+
         if(String(payload).includes('status')) {
             var status = String(payload).includes('true') ? 'ON' : 'OFF';
             window.webContents.send('res', 'status', status);

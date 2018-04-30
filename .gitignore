@@ -62,3 +62,4 @@ package-lock.json
 
 .vscode/tasks.json
 *.csv
+.DS_Store
